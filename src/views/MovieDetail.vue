@@ -263,12 +263,12 @@ h1 {
   .poster-large {
     width: 150px;
     height: 225px;
-    align-self: center;
+    align-self: flex-start;
   }
 
   h1 {
     font-size: 1.5rem;
-    text-align: center;
+    text-align: left;
   }
 
   .sessions {

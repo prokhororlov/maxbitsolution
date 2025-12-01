@@ -329,9 +329,10 @@ onMounted(() => {
   }
 
   .book-button {
-    width: 100%;
+    width: 190px;
     padding: 1rem;
     font-size: 1rem;
+    
   }
 }
 </style>
