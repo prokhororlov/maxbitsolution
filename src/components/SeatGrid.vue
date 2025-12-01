@@ -237,7 +237,7 @@ const draw = () => {
   ctx.font = '14px sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('Экран', contentWidth / 2, BASE_SCREEN_HEIGHT / 2);
+  ctx.fillText('Экран', contentWidth / 2  + 15, BASE_SCREEN_HEIGHT / 2);
 
   ctx.strokeStyle = '#d0d0d0';
   ctx.lineWidth = 2;
