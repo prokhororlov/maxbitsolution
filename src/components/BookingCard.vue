@@ -93,10 +93,6 @@ const formattedSeatsGroups = computed(() => {
   });
 });
 
-const formattedSeats = computed(() => {
-  return formattedSeatsGroups.value.join('; ');
-});
-
 const handlePayment = () => {
   emit('pay', props.booking.id);
 };
