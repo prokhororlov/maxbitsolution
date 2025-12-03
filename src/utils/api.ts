@@ -1,7 +1,8 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
-import { useAuthStore } from '@/stores/auth';
+import { useRootStore } from '@/stores';
+import { API_BASE_URL } from '@/config';
 
-const API_BASE_URL = 'http://localhost:3022';
+const STORAGE_KEY = 'auth_token';
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -12,10 +13,11 @@ export const apiClient: AxiosInstance = axios.create({
 
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('auth_token');
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    const isStorageAvailable = typeof window !== 'undefined' && typeof localStorage !== 'undefined';
+    if (!isStorageAvailable) return config;
+    const token = localStorage.getItem(STORAGE_KEY);
+    if (!token || !config.headers) return config;
+    config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
   (error) => Promise.reject(error)
@@ -24,20 +26,15 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Если получили 401 (Unauthorized), очищаем токен
-    if (error.response?.status === 401) {
-      try {
-        const authStore = useAuthStore();
-        authStore.clearToken();
-        // Перенаправляем на страницу входа только если мы не на странице логина/регистрации
-        if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
-          window.location.href = '/login';
-        }
-      } catch (e) {
-        // Если store недоступен, очищаем localStorage напрямую
-        localStorage.removeItem('auth_token');
-      }
-    }
+    const isUnauthorized = error.response?.status === 401;
+    if (!isUnauthorized) return Promise.reject(error);
+    const $ = useRootStore();
+    $.auth.clearToken();
+    const isWindowAvailable = typeof window !== 'undefined';
+    if (!isWindowAvailable) return Promise.reject(error);
+    const pathname = window.location.pathname;
+    const isAuthPage = pathname === '/login' || pathname === '/register';
+    if (!isAuthPage) window.location.href = '/login';
     return Promise.reject(error);
   }
 );

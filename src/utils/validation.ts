@@ -4,19 +4,9 @@ export const validateUsername = (username: string): string | null => {
 };
 
 export const validatePassword = (password: string): string | null => {
-  const hasMinLength = password.length >= 8;
-  const hasUpperCase = /[A-ZА-Я]/.test(password);
-  const hasNumber = /\d/.test(password);
-
-  if (!hasMinLength) {
-    return 'Пароль должен содержать минимум 8 символов';
-  }
-  if (!hasUpperCase) {
-    return 'Пароль должен содержать минимум 1 заглавную букву';
-  }
-  if (!hasNumber) {
-    return 'Пароль должен содержать минимум 1 цифру';
-  }
+  if (password.length < 8) return 'Пароль должен содержать минимум 8 символов';
+  if (!/[A-ZА-Я]/.test(password)) return 'Пароль должен содержать минимум 1 заглавную букву';
+  if (!/\d/.test(password)) return 'Пароль должен содержать минимум 1 цифру';
   return null;
 };
 

@@ -19,7 +19,7 @@
             class="cinema-row"
             @click="$router.push({ name: 'cinema-detail', params: { id: cinema.id } })"
           >
-            <td>{{ cinema.name.charAt(0).toUpperCase() + cinema.name.slice(1).toLowerCase() }}</td>
+            <td>{{ formatCinemaName(cinema.name) }}</td>
             <td>{{ cinema.address }}</td>
             <td>
               <router-link
@@ -41,7 +41,7 @@
           @click="$router.push({ name: 'cinema-detail', params: { id: cinema.id } })"
         >
           <div class="card-content">
-            <h3 class="card-title">{{ cinema.name.charAt(0).toUpperCase() + cinema.name.slice(1).toLowerCase() }}</h3>
+            <h3 class="card-title">{{ formatCinemaName(cinema.name) }}</h3>
             <p class="card-address">{{ cinema.address }}</p>
             <router-link
               :to="{ name: 'cinema-detail', params: { id: cinema.id } }"
@@ -58,31 +58,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { apiClient } from '@/utils/api';
+import { computed, onMounted } from 'vue';
+import { useRootStore } from '@/stores';
+import { formatCinemaName } from '@/utils/format';
 
-interface Cinema {
-  id: number;
-  name: string;
-  address: string;
-}
-
-const cinemas = ref<Cinema[]>([]);
-const loading = ref(true);
-const error = ref<string | null>(null);
+const $ = useRootStore();
+const cinemas = computed(() => $.cinemas.cinemas);
+const loading = computed(() => $.cinemas.loading);
+const error = computed(() => $.cinemas.error);
 
 onMounted(() => {
-  apiClient
-    .get('/cinemas')
-    .then((response) => {
-      cinemas.value = response.data;
-    })
-    .catch((err) => {
-      error.value = err.response?.data?.message || 'Ошибка загрузки кинотеатров';
-    })
-    .finally(() => {
-      loading.value = false;
-    });
+  $.cinemas.fetchCinemas();
 });
 </script>
 
@@ -200,10 +186,11 @@ onMounted(() => {
 }
 
 .card-title {
-  font-size: 1.2rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: 700;
   margin: 0;
-  color: rgba(255, 255, 255, 0.95);
+  color: rgba(255, 255, 255, 0.98);
+  line-height: 1.3;
 }
 
 .card-address {
@@ -250,6 +237,10 @@ onMounted(() => {
   h1 {
     font-size: 1.5rem;
     margin-bottom: 1rem;
+  }
+
+  .card-title {
+    font-size: 1.25rem;
   }
 }
 </style>

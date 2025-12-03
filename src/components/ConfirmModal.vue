@@ -2,7 +2,7 @@
   <Teleport to="body">
     <Transition name="modal">
       <div v-if="isOpen" class="modal-overlay" @click.self="handleCancel">
-        <div class="modal-container">
+        <div class="modal-container glass-card">
           <div class="modal-header">
             <h3 class="modal-title">{{ title }}</h3>
             <button class="modal-close" @click="handleCancel" aria-label="Close">
@@ -13,10 +13,10 @@
             <p class="modal-message">{{ message }}</p>
           </div>
           <div class="modal-footer">
-            <button class="modal-button modal-button-cancel" @click="handleCancel">
+            <button class="modal-button modal-button-cancel glass-button" @click="handleCancel">
               {{ cancelText }}
             </button>
-            <button class="modal-button modal-button-confirm" @click="handleConfirm">
+            <button class="modal-button modal-button-confirm glass-button" @click="handleConfirm">
               {{ confirmText }}
             </button>
           </div>
@@ -63,8 +63,8 @@ const handleCancel = () => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
+  background: var(--bg-glass-overlay);
+  backdrop-filter: var(--blur-lg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -73,11 +73,6 @@ const handleCancel = () => {
 }
 
 .modal-container {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   max-width: 400px;
   width: 100%;
   max-height: 90vh;
@@ -101,20 +96,20 @@ const handleCancel = () => {
   align-items: center;
   justify-content: space-between;
   padding: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .modal-title {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--text-secondary);
 }
 
 .modal-close {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-lighter);
   font-size: 2rem;
   line-height: 1;
   cursor: pointer;
@@ -124,13 +119,13 @@ const handleCancel = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  transition: all 0.2s ease;
+  border-radius: var(--radius-md);
+  transition: var(--transition-fast);
 }
 
 .modal-close:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.95);
+  background: var(--bg-glass-hover);
+  color: var(--text-secondary);
 }
 
 .modal-body {
@@ -139,7 +134,7 @@ const handleCancel = () => {
 
 .modal-message {
   margin: 0;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-muted);
   line-height: 1.6;
   font-size: 1rem;
 }
@@ -148,48 +143,36 @@ const handleCancel = () => {
   display: flex;
   gap: 1rem;
   padding: 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--border-default);
   justify-content: flex-end;
 }
 
 .modal-button {
   padding: 0.75rem 1.5rem;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
   font-family: inherit;
-  border: 1px solid transparent;
 }
 
 .modal-button-cancel {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  color: rgba(255, 255, 255, 0.9);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-.modal-button-cancel:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--text-muted);
+  border-color: var(--border-medium);
 }
 
 .modal-button-confirm {
-  background: rgba(239, 83, 80, 0.2);
-  backdrop-filter: blur(10px);
-  color: rgba(255, 255, 255, 0.95);
-  border-color: rgba(239, 83, 80, 0.4);
+  background: var(--button-danger-bg);
+  color: var(--text-secondary);
+  border-color: var(--button-danger-border);
 }
 
 .modal-button-confirm:hover {
-  background: rgba(239, 83, 80, 0.3);
-  border-color: rgba(239, 83, 80, 0.6);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(239, 83, 80, 0.3);
+  background: var(--button-danger-hover-bg);
+  border-color: var(--button-danger-hover-border);
+  box-shadow: 0 4px 12px var(--button-danger-shadow);
 }
 
-/* Transition animations */
 .modal-enter-active,
 .modal-leave-active {
   transition: opacity 0.3s ease;
@@ -211,7 +194,6 @@ const handleCancel = () => {
   transform: translateY(-20px) scale(0.95);
 }
 
-/* Mobile styles */
 @media (max-width: 768px) {
   .modal-container {
     max-width: 90%;

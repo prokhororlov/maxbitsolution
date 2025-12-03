@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount } from '@vue/test-utils';
-import PaymentTimer from '../PaymentTimer.vue';
+import PaymentTimer from '@/components/PaymentTimer.vue';
 
 describe('PaymentTimer', () => {
   beforeEach(() => {

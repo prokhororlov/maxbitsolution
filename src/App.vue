@@ -46,6 +46,7 @@ h1 {
   font-weight: 600;
   letter-spacing: -0.02em;
   margin-bottom: 1.5rem;
+  line-height: 1.2;
 }
 
 h2 {
@@ -53,17 +54,19 @@ h2 {
   font-weight: 600;
   letter-spacing: -0.01em;
   margin-bottom: 1rem;
+  line-height: 1.2;
 }
 
 h3 {
   font-size: 1.25rem;
   font-weight: 500;
   margin-bottom: 0.75rem;
+  line-height: 1.2;
 }
 
 p {
   font-size: 1rem;
-  line-height: 1.6;
+  line-height: 1.2;
 }
 
 /* Mobile responsive styles */
@@ -84,7 +87,7 @@ p {
   }
 
   p {
-    font-size: 0.95rem;
+    font-size: 0.8rem;
   }
 
   body {

@@ -3,7 +3,7 @@
     <div v-if="loading" class="loading">Загрузка...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else-if="cinema && groupedByDate.length > 0" class="cinema-content">
-      <h1>{{ cinema.name.charAt(0).toUpperCase() + cinema.name.slice(1).toLowerCase() }}</h1>
+      <h1>{{ formatCinemaName(cinema.name) }}</h1>
       <div class="date-groups">
         <div
           v-for="dateGroup in groupedByDate"
@@ -18,14 +18,14 @@
               class="movie-card"
             >
               <img
-                :src="`http://localhost:3022${movieData.movie.posterImage}`"
+                :src="getImageUrl(movieData.movie.posterImage)"
                 :alt="movieData.movie.title"
                 class="card-poster"
               />
               <div class="card-content">
                 <h3 class="card-title">{{ movieData.movie.title }}</h3>
                 <div class="card-meta">
-                  <span class="card-duration">{{ formatDuration(movieData.movie.lengthMinutes) }}</span>
+                  <span class="card-duration">⏱️ {{ formatDuration(movieData.movie.lengthMinutes) }}</span>
                   <span class="card-rating">⭐ {{ movieData.movie.rating }}</span>
                 </div>
                 <div class="session-times">
@@ -51,128 +51,33 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { apiClient } from '@/utils/api';
-import { formatDate, formatTime, formatDuration } from '@/utils/date';
-
-interface Cinema {
-  id: number;
-  name: string;
-  address: string;
-}
-
-interface MovieSession {
-  id: number;
-  movieId: number;
-  cinemaId: number;
-  startTime: string;
-}
-
-interface Movie {
-  id: number;
-  title: string;
-  posterImage: string;
-  lengthMinutes: number;
-  rating: number;
-}
-
-interface MovieWithSessions {
-  movie: Movie;
-  sessions: MovieSession[];
-}
-
-interface DateGroup {
-  date: string;
-  dateTimestamp: number;
-  movies: MovieWithSessions[];
-}
+import { useRootStore } from '@/stores';
+import { formatTime, formatDuration } from '@/utils/date';
+import { getImageUrl } from '@/config';
+import { formatCinemaName } from '@/utils/format';
+import { getGroupedByDate } from '@/utils/sessions';
+import type { Cinema, MovieSession, DateGroup } from '@/types/api';
 
 const route = useRoute();
+const $ = useRootStore();
+const cinemaId = Number(route.params.id);
+
 const cinema = ref<Cinema | null>(null);
 const sessions = ref<MovieSession[]>([]);
-const movies = ref<Movie[]>([]);
-const loading = ref(true);
-const error = ref<string | null>(null);
 
-const groupedByDate = computed(() => {
-  const dateMap = new Map<string, { dateKey: string; dateTimestamp: number; movieMap: Map<number, MovieWithSessions> }>();
-  const now = new Date();
+const loading = computed(() => $.cinemas.loading || $.movies.loading);
+const error = computed(() => $.cinemas.error || $.movies.error);
 
-  sessions.value
-    .filter((session) => {
-      // Фильтруем прошедшие сеансы
-      return new Date(session.startTime) > now;
-    })
-    .forEach((session) => {
-      const movie = movies.value.find((m) => m.id === session.movieId);
-      if (!movie) return;
-
-      const dateKey = formatDate(session.startTime);
-      const sessionDate = new Date(session.startTime);
-      // Получаем начало дня для правильной сортировки
-      const dateTimestamp = new Date(sessionDate.getFullYear(), sessionDate.getMonth(), sessionDate.getDate()).getTime();
-
-      if (!dateMap.has(dateKey)) {
-        dateMap.set(dateKey, {
-          dateKey,
-          dateTimestamp,
-          movieMap: new Map(),
-        });
-      }
-
-      const dateGroup = dateMap.get(dateKey)!;
-
-      if (!dateGroup.movieMap.has(movie.id)) {
-        dateGroup.movieMap.set(movie.id, {
-          movie,
-          sessions: [],
-        });
-      }
-
-      dateGroup.movieMap.get(movie.id)!.sessions.push(session);
-    });
-
-  // Сортируем сеансы по времени для каждого фильма
-  dateMap.forEach((dateGroup) => {
-    dateGroup.movieMap.forEach((movieData) => {
-      movieData.sessions.sort((a, b) => {
-        return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
-      });
-    });
-  });
-
-  // Преобразуем в массив и сортируем по дате
-  return Array.from(dateMap.values())
-    .map((dateGroup) => ({
-      date: dateGroup.dateKey,
-      dateTimestamp: dateGroup.dateTimestamp,
-      movies: Array.from(dateGroup.movieMap.values()),
-    }))
-    .sort((a, b) => {
-      // Используем timestamp для правильной сортировки
-      return a.dateTimestamp - b.dateTimestamp;
-    });
+const groupedByDate = computed<DateGroup[]>(() => {
+  if (!sessions.value.length || !$.movies.movies.length) return [];
+  return getGroupedByDate(sessions.value, $.movies.movies);
 });
 
-onMounted(() => {
-  const cinemaId = Number(route.params.id);
-
-  Promise.all([
-    apiClient.get('/cinemas'),
-    apiClient.get(`/cinemas/${cinemaId}/sessions`),
-    apiClient.get('/movies'),
-  ])
-    .then(([cinemasResponse, sessionsResponse, moviesResponse]) => {
-      const cinemas = cinemasResponse.data;
-      cinema.value = cinemas.find((c: Cinema) => c.id === cinemaId) || null;
-      sessions.value = sessionsResponse.data;
-      movies.value = moviesResponse.data;
-    })
-    .catch((err) => {
-      error.value = err.response?.data?.message || 'Ошибка загрузки данных';
-    })
-    .finally(() => {
-      loading.value = false;
-    });
+onMounted(async () => {
+  const data = await $.cinemas.loadCinemaDetail(cinemaId);
+  cinema.value = data.cinema;
+  sessions.value = data.sessions;
+  await $.movies.fetchMovies();
 });
 </script>
 
@@ -197,7 +102,11 @@ onMounted(() => {
 }
 
 h1 {
-  margin-bottom: 2rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.98);
+  margin: 0 0 2rem 0;
+  line-height: 1.3;
 }
 
 .date-groups {
@@ -317,14 +226,19 @@ h1 {
 }
 
 /* Tablet - 2 columns */
-@media (max-width: 1200px) {
+@media (max-width: 1280px) {
   .movies-cards {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 /* Mobile - 1 column */
-@media (max-width: 768px) {
+@media (max-width: 992px) {
+  .movies-cards {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
   .date-groups {
     gap: 1.5rem;
   }
@@ -338,13 +252,8 @@ h1 {
     margin-bottom: 1rem;
   }
 
-  .movies-cards {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-
   h1 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     margin-bottom: 1rem;
   }
 

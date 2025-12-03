@@ -1,0 +1,80 @@
+/* Стеклянный эффект карточки */
+.glass-card {
+  background: var(--bg-glass);
+  backdrop-filter: var(--blur-md);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  transition: var(--transition-default);
+}
+
+.glass-card:hover {
+  background: var(--bg-glass-hover);
+  border-color: var(--border-medium);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Стеклянный эффект кнопки */
+.glass-button {
+  background: var(--bg-glass);
+  backdrop-filter: var(--blur-sm);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-weight: 600;
+  transition: var(--transition-default);
+  font-family: inherit;
+}
+
+.glass-button:hover:not(:disabled) {
+  background: var(--bg-glass-hover);
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.glass-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Стеклянный эффект инпута */
+.glass-input {
+  background: var(--bg-glass);
+  backdrop-filter: var(--blur-sm);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+  transition: var(--transition-default);
+}
+
+.glass-input:focus {
+  outline: none;
+  border-color: var(--border-stronger);
+  background: var(--bg-glass-hover);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+/* Эффект поднятия при hover */
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+/* Стандартный переход */
+.transition-default {
+  transition: var(--transition-default);
+}
+
+/* Медиа-запросы */
+@media (max-width: 768px) {
+  .glass-card {
+    border-radius: var(--radius-lg);
+  }
+  
+  .glass-button {
+    width: 100%;
+  }
+}
+

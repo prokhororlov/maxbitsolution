@@ -4,7 +4,7 @@
     <div v-if="loading" class="loading">Загрузка...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else>
-      <table class="movies-table">
+      <table class="movies-table glass-card">
         <thead>
           <tr>
             <th>Название</th>
@@ -23,7 +23,7 @@
             <td>
               <div class="movie-info">
                 <img
-                  :src="`http://localhost:3022${movie.posterImage}`"
+                  :src="getImageUrl(movie.posterImage)"
                   :alt="movie.title"
                   class="poster"
                 />
@@ -35,7 +35,7 @@
             <td>
               <router-link
                 :to="{ name: 'movie-detail', params: { id: movie.id } }"
-                class="view-sessions-button"
+                class="view-sessions-button glass-button"
                 @click.stop
               >
                 Посмотреть сеансы
@@ -48,23 +48,23 @@
         <div
           v-for="movie in movies"
           :key="movie.id"
-          class="movie-card"
+          class="movie-card glass-card"
           @click="$router.push({ name: 'movie-detail', params: { id: movie.id } })"
         >
           <img
-            :src="`http://localhost:3022${movie.posterImage}`"
+            :src="getImageUrl(movie.posterImage)"
             :alt="movie.title"
             class="card-poster"
           />
           <div class="card-content">
             <h3 class="card-title">{{ movie.title }}</h3>
             <div class="card-meta">
-              <span class="card-duration">{{ formatDuration(movie.lengthMinutes) }}</span>
+              <span class="card-duration">⏱️ {{ formatDuration(movie.lengthMinutes) }}</span>
               <span class="card-rating">⭐ {{ movie.rating }}</span>
             </div>
             <router-link
               :to="{ name: 'movie-detail', params: { id: movie.id } }"
-              class="card-button"
+              class="card-button glass-button"
               @click.stop
             >
               Посмотреть сеансы
@@ -77,36 +77,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { apiClient } from '@/utils/api';
+import { computed, onMounted } from 'vue';
+import { useRootStore } from '@/stores';
 import { formatDuration } from '@/utils/date';
+import { getImageUrl } from '@/config';
 
-interface Movie {
-  id: number;
-  title: string;
-  year: number;
-  rating: number;
-  posterImage: string;
-  lengthMinutes: number;
-  description: string;
-}
-
-const movies = ref<Movie[]>([]);
-const loading = ref(true);
-const error = ref<string | null>(null);
+const $ = useRootStore();
+const movies = computed(() => $.movies.movies);
+const loading = computed(() => $.movies.loading);
+const error = computed(() => $.movies.error);
 
 onMounted(() => {
-  apiClient
-    .get('/movies')
-    .then((response) => {
-      movies.value = response.data;
-    })
-    .catch((err) => {
-      error.value = err.response?.data?.message || 'Ошибка загрузки фильмов';
-    })
-    .finally(() => {
-      loading.value = false;
-    });
+  $.movies.fetchMovies();
 });
 </script>
 
@@ -119,7 +101,7 @@ onMounted(() => {
 .error {
   text-align: center;
   padding: 2rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-light);
 }
 
 .error {
@@ -130,35 +112,31 @@ onMounted(() => {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .movies-table th {
   padding: 1.25rem 1.5rem;
   text-align: left;
-  background: rgba(255, 255, 255, 0.08);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-glass-hover);
+  border-bottom: 1px solid var(--border-default);
   font-weight: 600;
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-muted);
 }
 
 .movies-table td {
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(255, 255, 255, 0.03);
-  transition: background 0.3s ease;
+  border-bottom: 1px solid var(--bg-glass-light);
+  background: var(--bg-glass-light);
+  transition: var(--transition-default);
 }
 
 .movies-table tr:hover td {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-glass-hover);
 }
 
 .movies-table tr:last-child td {
@@ -167,7 +145,7 @@ onMounted(() => {
 
 .movie-row {
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--transition-default);
 }
 
 .movie-row:hover {
@@ -184,10 +162,10 @@ onMounted(() => {
   width: 60px;
   height: 90px;
   object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transition: transform 0.3s ease;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-medium);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-default);
 }
 
 .poster:hover {
@@ -196,23 +174,10 @@ onMounted(() => {
 
 .view-sessions-button {
   padding: 0.625rem 1.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.9);
-  text-decoration: none;
-  display: inline-block;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
   font-size: 0.9rem;
   font-weight: 500;
-}
-
-.view-sessions-button:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.4);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  text-decoration: none;
+  display: inline-block;
 }
 
 .movies-table {
@@ -226,32 +191,20 @@ onMounted(() => {
 }
 
 .movie-card {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
   padding: 1rem;
   cursor: pointer;
-  transition: all 0.3s ease;
   display: flex;
   gap: 1rem;
   min-width: 0;
   overflow: hidden;
 }
 
-.movie-card:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
 .card-poster {
   width: 80px;
   height: 120px;
   object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-medium);
   flex-shrink: 0;
 }
 
@@ -264,10 +217,11 @@ onMounted(() => {
 }
 
 .card-title {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: 700;
   margin: 0;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--text-primary);
+  line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -277,22 +231,15 @@ onMounted(() => {
   display: flex;
   gap: 1rem;
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-lighter);
 }
 
 .card-button {
   margin-top: auto;
   padding: 0.5rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.9);
-  text-decoration: none;
-  display: inline-block;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
   font-size: 0.9rem;
   font-weight: 500;
+  text-decoration: none;
   text-align: center;
   width: fit-content;
   max-width: 100%;
@@ -301,20 +248,15 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-.card-button:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.4);
-}
-
 /* Tablet - 2 columns */
-@media (max-width: 1200px) {
+@media (max-width: 1280px) {
   .movies-cards {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 /* Mobile - 1 column */
-@media (max-width: 768px) {
+@media (max-width: 992px) {
   .movies-cards {
     grid-template-columns: 1fr;
     gap: 1rem;
@@ -323,6 +265,10 @@ onMounted(() => {
   h1 {
     font-size: 1.5rem;
     margin-bottom: 1rem;
+  }
+
+  .card-title {
+    font-size: 1.25rem;
   }
 }
 </style>

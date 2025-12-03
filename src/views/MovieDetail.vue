@@ -5,7 +5,7 @@
     <div v-else-if="movie && sessions.length > 0" class="movie-content">
       <div class="movie-header">
         <img
-          :src="`http://localhost:3022${movie.posterImage}`"
+          :src="getImageUrl(movie.posterImage)"
           :alt="movie.title"
           class="poster-large"
         />
@@ -44,90 +44,37 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { apiClient } from '@/utils/api';
-import { formatDate, formatTime, formatDuration } from '@/utils/date';
-
-interface Movie {
-  id: number;
-  title: string;
-  year: number;
-  rating: number;
-  posterImage: string;
-  lengthMinutes: number;
-  description: string;
-}
-
-interface MovieSession {
-  id: number;
-  movieId: number;
-  cinemaId: number;
-  startTime: string;
-}
-
-interface Cinema {
-  id: number;
-  name: string;
-  address: string;
-}
+import { useRootStore } from '@/stores';
+import { formatTime, formatDuration } from '@/utils/date';
+import { getImageUrl } from '@/config';
+import { getGroupedSessions } from '@/utils/sessions';
+import { formatCinemaName } from '@/utils/format';
+import type { Movie, MovieSession } from '@/types/api';
 
 const route = useRoute();
+const $ = useRootStore();
+const movieId = Number(route.params.id);
+
 const movie = ref<Movie | null>(null);
 const sessions = ref<MovieSession[]>([]);
-const cinemas = ref<Cinema[]>([]);
-const loading = ref(true);
-const error = ref<string | null>(null);
+
+const loading = computed(() => $.movies.loading || $.cinemas.loading);
+const error = computed(() => $.movies.error || $.cinemas.error);
 
 const groupedSessions = computed(() => {
-  const groups: Record<string, Record<number, MovieSession[]>> = {};
-  const now = new Date();
-
-  sessions.value
-    .filter((session) => {
-      // Фильтруем прошедшие сеансы
-      return new Date(session.startTime) > now;
-    })
-    .forEach((session) => {
-      const date = formatDate(session.startTime);
-      const cinemaId = session.cinemaId;
-
-      if (!groups[date]) {
-        groups[date] = {};
-      }
-      if (!groups[date][cinemaId]) {
-        groups[date][cinemaId] = [];
-      }
-      groups[date][cinemaId].push(session);
-    });
-
-  return groups;
+  if (!sessions.value.length) return {};
+  return getGroupedSessions(sessions.value, $.cinemas.cinemas);
 });
 
-const getCinemaName = (cinemaId: number): string => {
-  const cinema = cinemas.value.find((c) => c.id === cinemaId);
-  if (!cinema?.name) return '';
-  return cinema.name.charAt(0).toUpperCase() + cinema.name.slice(1).toLowerCase();
+const getCinemaName = (cinemaId: number) => {
+  return formatCinemaName($.cinemas.cinemas.find((c) => c.id === cinemaId)?.name);
 };
 
-onMounted(() => {
-  const movieId = Number(route.params.id);
-
-  Promise.all([
-    apiClient.get('/movies'),
-    apiClient.get(`/movies/${movieId}/sessions`),
-    apiClient.get('/cinemas'),
-  ])
-    .then(([moviesResponse, sessionsResponse, cinemasResponse]) => {
-      const movies = moviesResponse.data;
-      movie.value = movies.find((m: Movie) => m.id === movieId) || null;
-      sessions.value = sessionsResponse.data;
-      cinemas.value = cinemasResponse.data;
-    })
-    .catch((err) => {
-      error.value = err.response?.data?.message || 'Ошибка загрузки данных';
-    })
-    .finally(() => {
-      loading.value = false;
-    });
+onMounted(async () => {
+  const data = await $.movies.loadMovieDetail(movieId);
+  movie.value = data.movie;
+  sessions.value = data.sessions;
+  await $.cinemas.fetchCinemas();
 });
 </script>
 
@@ -178,12 +125,16 @@ onMounted(() => {
 }
 
 h1 {
-  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.98);
+  margin: 0 0 1rem 0;
+  line-height: 1.3;
 }
 
 .description {
   margin-bottom: 1.5rem;
-  line-height: 1.7;
+  line-height: 1.4;
   color: rgba(255, 255, 255, 0.8);
 }
 
@@ -215,7 +166,6 @@ h1 {
 
 .cinema-group {
   margin-bottom: 1.5rem;
-  margin-left: 1rem;
 }
 
 .cinema-name {
@@ -267,7 +217,7 @@ h1 {
   }
 
   h1 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     text-align: left;
   }
 

@@ -1,7 +1,7 @@
 <template>
   <div class="register-page">
     <h1>Регистрация</h1>
-    <form @submit.prevent="handleSubmit" class="register-form">
+    <form @submit.prevent="handleSubmit" class="register-form glass-card">
       <div class="form-group">
         <label for="username">Логин</label>
         <input
@@ -10,6 +10,7 @@
           type="text"
           placeholder="Введите логин"
           :class="{ error: usernameError }"
+          class="glass-input"
           @blur="validateUsername"
         />
         <span v-if="usernameError" class="error-message">{{ usernameError }}</span>
@@ -22,6 +23,7 @@
           type="password"
           placeholder="Введите пароль"
           :class="{ error: passwordError }"
+          class="glass-input"
           @blur="validatePassword"
           @input="onPasswordChange"
         />
@@ -35,6 +37,7 @@
           type="password"
           placeholder="Введите пароль еще раз"
           :class="{ error: passwordConfirmationError }"
+          class="glass-input"
           @blur="validatePasswordConfirmation"
           @input="validatePasswordConfirmation"
         />
@@ -43,7 +46,7 @@
       <div v-if="apiError" class="form-group">
         <span class="error-message">{{ apiError }}</span>
       </div>
-      <button type="submit" :disabled="isLoading" class="submit-button">Зарегистрироваться</button>
+      <button type="submit" :disabled="isLoading" class="submit-button glass-button">Зарегистрироваться</button>
       <p class="login-link">
         Если вы уже зарегистрированы
         <router-link to="/login">войдите</router-link>
@@ -55,16 +58,15 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
+import { useRootStore } from '@/stores';
 import {
   validateUsername as validateUsernameUtil,
   validatePassword as validatePasswordUtil,
   validatePasswordConfirmation as validatePasswordConfirmationUtil,
 } from '@/utils/validation';
-import { apiClient } from '@/utils/api';
 
 const router = useRouter();
-const authStore = useAuthStore();
+const $ = useRootStore();
 
 const username = ref('');
 const password = ref('');
@@ -85,10 +87,8 @@ const validatePassword = () => {
 
 const onPasswordChange = () => {
   validatePassword();
-  // Если поле подтверждения уже заполнено, проверяем совпадение
-  if (passwordConfirmation.value) {
-    validatePasswordConfirmation();
-  }
+  if (!passwordConfirmation.value) return;
+  validatePasswordConfirmation();
 };
 
 const validatePasswordConfirmation = () => {
@@ -96,45 +96,22 @@ const validatePasswordConfirmation = () => {
     passwordConfirmationError.value = 'Подтвердите пароль';
     return;
   }
-  passwordConfirmationError.value = validatePasswordConfirmationUtil(
-    password.value,
-    passwordConfirmation.value
-  );
+  passwordConfirmationError.value = validatePasswordConfirmationUtil(password.value, passwordConfirmation.value);
 };
 
 const handleSubmit = () => {
   usernameError.value = validateUsernameUtil(username.value);
   passwordError.value = validatePasswordUtil(password.value);
-  passwordConfirmationError.value = validatePasswordConfirmationUtil(
-    password.value,
-    passwordConfirmation.value
-  );
-
+  passwordConfirmationError.value = validatePasswordConfirmationUtil(password.value, passwordConfirmation.value);
   const hasErrors = usernameError.value || passwordError.value || passwordConfirmationError.value;
-  if (hasErrors) {
-    return;
-  }
-
+  if (hasErrors) return;
   apiError.value = null;
   isLoading.value = true;
-
-  apiClient
-    .post('/register', {
-      username: username.value,
-      password: password.value,
-    })
-    .then((response) => {
-      const token = response.data.token;
-      authStore.setToken(token);
-      router.push({ name: 'my-bookings' });
-    })
-    .catch((error) => {
-      const errorMessage = error.response?.data?.message || 'Ошибка регистрации';
-      apiError.value = errorMessage;
-    })
-    .finally(() => {
-      isLoading.value = false;
-    });
+  $.auth
+    .register(username.value, password.value)
+    .then(() => router.push({ name: 'my-bookings' }))
+    .catch((error) => { apiError.value = error.message; })
+    .finally(() => { isLoading.value = false; });
 };
 </script>
 
@@ -153,12 +130,8 @@ h1 {
 .register-form {
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 20px;
+  border-radius: var(--radius-2xl);
   padding: 2rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .form-group {
@@ -169,32 +142,19 @@ label {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
 input {
   width: 100%;
   padding: 0.875rem 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  color: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
   font-size: 1rem;
-  transition: all 0.3s ease;
   font-family: inherit;
 }
 
-input:focus {
-  outline: none;
-  border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
-}
-
 input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-disabled);
 }
 
 input.error {
@@ -212,49 +172,28 @@ input.error {
 
 .submit-button {
   padding: 0.875rem 1.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  color: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  cursor: pointer;
   margin-top: 0.5rem;
   font-size: 1rem;
   font-weight: 600;
-  transition: all 0.3s ease;
-  font-family: inherit;
-}
-
-.submit-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.submit-button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.4);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 .login-link {
   text-align: center;
   margin-top: 1.5rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-lighter);
   font-size: 0.9rem;
 }
 
 .login-link a {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-muted);
   text-decoration: underline;
-  transition: color 0.3s ease;
+  transition: var(--transition-fast);
 }
 
 .login-link a:hover {
-  color: #fff;
+  color: var(--text-primary);
 }
 
-/* Mobile styles */
 @media (max-width: 768px) {
   .register-page {
     padding: 1rem;

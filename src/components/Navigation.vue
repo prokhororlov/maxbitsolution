@@ -63,13 +63,13 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
+import { useRootStore } from '@/stores';
 import ConfirmModal from './ConfirmModal.vue';
 
-const authStore = useAuthStore();
+const $ = useRootStore();
 const router = useRouter();
 const route = useRoute();
-const isAuthenticated = computed(() => authStore.isAuthenticated);
+const isAuthenticated = computed(() => $.auth.isAuthenticated);
 const isMobileMenuOpen = ref(false);
 const isLogoutModalOpen = ref(false);
 const navigationRef = ref<HTMLElement | null>(null);
@@ -151,7 +151,7 @@ const hideLogoutModal = () => {
 
 const handleLogout = () => {
   hideLogoutModal();
-  authStore.logout();
+  $.auth.logout();
   router.push({ name: 'movies' });
 };
 </script>
@@ -160,9 +160,9 @@ const handleLogout = () => {
 .navigation {
   width: 240px;
   padding: 2rem 1.5rem;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(20px);
+  border-right: 1px solid var(--border-default);
+  background: var(--bg-glass);
+  backdrop-filter: var(--blur-md);
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
   position: sticky;
   top: 0;
@@ -184,31 +184,31 @@ const handleLogout = () => {
 .nav-item {
   display: block;
   padding: 0.875rem 1rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-muted);
   text-decoration: none;
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   margin-bottom: 0.5rem;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-glass-light);
   width: 100%;
   text-align: left;
-  transition: all 0.3s ease;
+  transition: var(--transition-default);
   font-size: 0.95rem;
   font-weight: 500;
-  backdrop-filter: blur(10px);
+  backdrop-filter: var(--blur-sm);
 }
 
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--bg-glass-hover);
+  border-color: var(--border-medium);
   transform: translateX(4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-sm);
 }
 
 .nav-item.active {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--bg-glass-active);
+  border-color: var(--border-strong);
   box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
 }
 
@@ -230,7 +230,6 @@ const handleLogout = () => {
   display: none;
 }
 
-/* Mobile styles */
 @media (max-width: 768px) {
   .navigation {
     width: 100%;
@@ -241,9 +240,9 @@ const handleLogout = () => {
     z-index: 1001;
     padding: 0;
     border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-default);
+    background: var(--bg-glass);
+    backdrop-filter: var(--blur-md);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
     overflow: visible;
   }
@@ -253,7 +252,7 @@ const handleLogout = () => {
     align-items: center;
     justify-content: space-between;
     padding: 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--border-default);
   }
 
   .mobile-header-title {
@@ -261,7 +260,7 @@ const handleLogout = () => {
     font-size: 1.25rem;
     font-weight: 600;
     margin: 0;
-    color: rgba(255, 255, 255, 0.95);
+    color: var(--text-secondary);
     flex: 1;
     text-align: left;
   }
@@ -270,33 +269,33 @@ const handleLogout = () => {
     display: flex;
     flex-direction: column;
     gap: 5px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
+    background: var(--bg-glass-hover);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-md);
     padding: 0.5rem;
     cursor: pointer;
     width: 40px;
     height: 40px;
     justify-content: center;
     align-items: center;
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
+    backdrop-filter: var(--blur-sm);
+    transition: var(--transition-default);
     position: relative;
     z-index: 1002;
     order: 2;
   }
 
   .mobile-menu-toggle:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--bg-glass-active);
   }
 
   .mobile-menu-toggle span {
     display: block;
     width: 24px;
     height: 2px;
-    background: rgba(255, 255, 255, 0.9);
+    background: var(--text-muted);
     border-radius: 2px;
-    transition: all 0.3s ease;
+    transition: var(--transition-default);
     position: absolute;
   }
 
@@ -356,8 +355,8 @@ const handleLogout = () => {
     left: 0;
     width: 100%;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(10px);
+    background: var(--bg-glass-overlay);
+    backdrop-filter: var(--blur-sm);
     z-index: 999;
     pointer-events: auto;
   }
@@ -365,15 +364,15 @@ const handleLogout = () => {
   .mobile-header {
     position: relative;
     z-index: 1002;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
+    background: var(--bg-glass);
+    backdrop-filter: var(--blur-md);
   }
 
   .nav-list {
     position: relative;
     z-index: 1002;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
+    background: var(--bg-glass);
+    backdrop-filter: var(--blur-md);
   }
 }
 </style>

@@ -3,7 +3,7 @@ import {
   validateUsername,
   validatePassword,
   validatePasswordConfirmation,
-} from '../validation';
+} from '@/utils/validation';
 
 describe('validateUsername', () => {
   it('should return null for valid username (8+ characters)', () => {

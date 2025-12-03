@@ -19,6 +19,7 @@
           :show-payment="true"
           :show-timer="true"
           @pay="handlePayment"
+          @expired="handleExpired"
         />
       </div>
       <div v-if="upcomingBookings.length > 0" class="bookings-section">
@@ -57,209 +58,86 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { apiClient } from '@/utils/api';
 import BookingCard from '@/components/BookingCard.vue';
 import { useNotifications } from '@/composables/useNotifications';
-import { useAuthStore } from '@/stores/auth';
+import { useRootStore } from '@/stores';
 
 const { success } = useNotifications();
 const router = useRouter();
-const authStore = useAuthStore();
+const $ = useRootStore();
+const isMounted = ref(false);
 
-interface Seat {
-  rowNumber: number;
-  seatNumber: number;
-}
+const loading = computed(() => $.bookings.loading || $.movies.loading || $.cinemas.loading);
+const error = computed(() => $.bookings.error);
+const isAuthenticated = computed(() => $.auth.isAuthenticated);
 
-interface Booking {
-  id: string;
-  movieSessionId: number;
-  bookedAt: string;
-  seats: Seat[];
-  isPaid: boolean;
-}
+const unpaidBookings = computed(() => $.bookings.unpaidBookings);
+const upcomingBookings = computed(() => $.bookings.upcomingBookings);
+const pastBookings = computed(() => $.bookings.pastBookings);
+const allBookings = computed(() => $.bookings.bookings);
+const paymentTimeSeconds = computed(() => $.bookings.paymentTimeSeconds);
 
-interface MovieSession {
-  id: number;
-  movieId: number;
-  cinemaId: number;
-  startTime: string;
-}
-
-interface Movie {
-  id: number;
-  title: string;
-  posterImage: string;
-}
-
-interface Cinema {
-  id: number;
-  name: string;
-}
-
-interface Settings {
-  bookingPaymentTimeSeconds: number;
-}
-
-const allBookings = ref<Booking[]>([]);
-const movieSessions = ref<MovieSession[]>([]);
-const movies = ref<Movie[]>([]);
-const cinemas = ref<Cinema[]>([]);
-const settings = ref<Settings | null>(null);
-const loading = ref(true);
-const error = ref<string | null>(null);
-
-const isAuthenticated = computed(() => authStore.isAuthenticated);
-
-const paymentTimeSeconds = computed(() => settings.value?.bookingPaymentTimeSeconds || 180);
-
-const unpaidBookings = computed(() => {
-  const now = Date.now();
-  return allBookings.value.filter((booking) => {
-    if (booking.isPaid) return false;
-    const bookedAtTime = new Date(booking.bookedAt).getTime();
-    const elapsed = Math.floor((now - bookedAtTime) / 1000);
-    return elapsed < paymentTimeSeconds.value;
-  });
-});
-
-const upcomingBookings = computed(() => {
-  const now = Date.now();
-  return allBookings.value.filter((booking) => {
-    if (!booking.isPaid) return false;
-    const session = movieSessions.value.find((s) => s.id === booking.movieSessionId);
-    if (!session) return false;
-    const startTime = new Date(session.startTime).getTime();
-    return startTime > now;
-  });
-});
-
-const pastBookings = computed(() => {
-  const now = Date.now();
-  return allBookings.value.filter((booking) => {
-    const session = movieSessions.value.find((s) => s.id === booking.movieSessionId);
-    if (!session) return false;
-    const startTime = new Date(session.startTime).getTime();
-    return startTime < now;
-  });
-});
-
-const getMovieTitle = (movieSessionId: number): string => {
-  const session = movieSessions.value.find((s) => s.id === movieSessionId);
-  if (!session) return '';
-  const movie = movies.value.find((m) => m.id === session.movieId);
-  return movie?.title || '';
+const getMovieTitle = (movieSessionId: number) => {
+  return $.bookings.getMovieTitle(movieSessionId, $.movies.movies);
 };
 
-const getMoviePoster = (movieSessionId: number): string => {
-  const session = movieSessions.value.find((s) => s.id === movieSessionId);
-  if (!session) return '';
-  const movie = movies.value.find((m) => m.id === session.movieId);
-  return movie?.posterImage || '';
+const getMoviePoster = (movieSessionId: number) => {
+  return $.bookings.getMoviePoster(movieSessionId, $.movies.movies);
 };
 
-const getCinemaName = (movieSessionId: number): string => {
-  const session = movieSessions.value.find((s) => s.id === movieSessionId);
-  if (!session) return '';
-  const cinema = cinemas.value.find((c) => c.id === session.cinemaId);
-  if (!cinema?.name) return '';
-  return cinema.name.charAt(0).toUpperCase() + cinema.name.slice(1).toLowerCase();
+const getCinemaName = (movieSessionId: number) => {
+  return $.bookings.getCinemaName(movieSessionId, $.cinemas.cinemas);
 };
 
-const getSessionStartTime = (movieSessionId: number): string => {
-  const session = movieSessions.value.find((s) => s.id === movieSessionId);
-  return session?.startTime || '';
-};
-
-const loadBookings = () => {
-  loading.value = true;
-  error.value = null;
-
-  Promise.all([
-    apiClient.get('/me/bookings'),
-    apiClient.get('/settings'),
-  ])
-    .then(([bookingsResponse, settingsResponse]) => {
-      allBookings.value = bookingsResponse.data;
-      settings.value = settingsResponse.data;
-      return loadSessionDetails();
-    })
-    .catch((err) => {
-      error.value = err.response?.data?.message || 'Ошибка загрузки билетов';
-    })
-    .finally(() => {
-      loading.value = false;
-    });
-};
-
-const loadSessionDetails = () => {
-  const sessionIds = [...new Set(allBookings.value.map((b) => b.movieSessionId))];
-  
-  return Promise.all([
-    ...sessionIds.map((id) => apiClient.get(`/movieSessions/${id}`)),
-    apiClient.get('/movies'),
-    apiClient.get('/cinemas'),
-  ])
-    .then((responses) => {
-      const sessionResponses = responses.slice(0, sessionIds.length);
-      movieSessions.value = sessionResponses.map((r) => r.data);
-      movies.value = responses[sessionIds.length].data;
-      cinemas.value = responses[sessionIds.length + 1].data;
-    });
+const getSessionStartTime = (movieSessionId: number) => {
+  return $.bookings.getSessionStartTime(movieSessionId);
 };
 
 const handlePayment = (bookingId: string) => {
-  apiClient
-    .post(`/bookings/${bookingId}/payments`)
+  $.bookings.payBooking(bookingId)
     .then(() => {
       success('Бронирование успешно оплачено!');
-      loadBookings();
-    })
-    .catch((err) => {
-      error.value = err.response?.data?.message || 'Ошибка оплаты';
+      return $.bookings.loadAllData();
     });
+};
+
+const handleExpired = (bookingId: string) => {
+  $.bookings.removeBooking(bookingId);
 };
 
 let intervalId: number | null = null;
 
-onMounted(() => {
-  // Проверяем авторизацию перед загрузкой данных
-  if (!authStore.isAuthenticated) {
+onMounted(async () => {
+  if (!$.auth.isAuthenticated) {
     router.push({ name: 'login' });
     return;
   }
-
-  loadBookings();
-  
+  isMounted.value = true;
+  await Promise.all([
+    $.bookings.initializeBookingsPage(),
+    $.movies.fetchMovies(),
+    $.cinemas.fetchCinemas(),
+  ]);
+  if (!isMounted.value) return;
   intervalId = window.setInterval(() => {
-    // Проверяем авторизацию перед обновлением
-    if (!authStore.isAuthenticated) {
-      if (intervalId !== null) {
+    if (!isMounted.value || !$.auth.isAuthenticated) {
+      if (intervalId) {
         clearInterval(intervalId);
         intervalId = null;
       }
       return;
     }
-
-    const now = Date.now();
-    const hasExpiredUnpaid = allBookings.value.some((booking) => {
-      if (booking.isPaid) return false;
-      const bookedAtTime = new Date(booking.bookedAt).getTime();
-      const elapsed = Math.floor((now - bookedAtTime) / 1000);
-      return elapsed >= paymentTimeSeconds.value;
-    });
-    
-    if (hasExpiredUnpaid) {
-      loadBookings();
-    }
+    if ($.bookings.hasExpiredUnpaid) $.bookings.loadAllData();
   }, 1000);
 });
 
-onUnmounted(() => {
-  if (intervalId !== null) {
+onBeforeUnmount(() => {
+  isMounted.value = false;
+  if (intervalId) {
     clearInterval(intervalId);
+    intervalId = null;
   }
 });
 </script>

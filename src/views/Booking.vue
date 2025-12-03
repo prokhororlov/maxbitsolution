@@ -6,9 +6,9 @@
     <div v-else-if="sessionDetails" class="booking-content">
       <div class="session-info">
         <h2 class="movie-title">{{ movieTitle }}</h2>
-        <p><strong>Кинотеатр:</strong> {{ cinemaName }}</p>
-        <p><strong>Адрес:</strong> {{ cinemaAddress }}</p>
-        <p><strong>Время:</strong> {{ formatDateTime(sessionDetails.startTime) }}</p>
+        <p><strong>🎪 Кинотеатр:</strong> {{ cinemaName }}</p>
+        <p><strong>📍 Адрес:</strong> {{ cinemaAddress }}</p>
+        <p><strong>📅 Время:</strong> {{ formatDateTime(sessionDetails.startTime) }}</p>
       </div>
       <div class="seat-selection-wrapper">
         <SeatGrid
@@ -46,152 +46,65 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
-import { apiClient } from '@/utils/api';
+import { useRootStore } from '@/stores';
 import { formatDateTime } from '@/utils/date';
 import SeatGrid from '@/components/SeatGrid.vue';
-
-interface Seat {
-  rowNumber: number;
-  seatNumber: number;
-}
-
-interface SessionDetails {
-  id: number;
-  movieId: number;
-  cinemaId: number;
-  startTime: string;
-  seats: {
-    rows: number;
-    seatsPerRow: number;
-  };
-  bookedSeats: Seat[];
-}
-
-interface Movie {
-  id: number;
-  title: string;
-}
-
-interface Cinema {
-  id: number;
-  name: string;
-  address: string;
-}
+import { formatCinemaName } from '@/utils/format';
+import { formatTicketsText } from '@/utils/text';
+import type { Seat } from '@/types/api';
 
 const route = useRoute();
 const router = useRouter();
-const authStore = useAuthStore();
+const $ = useRootStore();
+const sessionId = Number(route.params.sessionId);
 
-const sessionDetails = ref<SessionDetails | null>(null);
-const movies = ref<Movie[]>([]);
-const cinemas = ref<Cinema[]>([]);
 const selectedSeats = ref<Seat[]>([]);
-const loading = ref(true);
-const error = ref<string | null>(null);
-const isBooking = ref(false);
 
-const isAuthenticated = computed(() => authStore.isAuthenticated);
+const sessionDetails = computed(() => $.sessions.currentSession);
+const loading = computed(() => $.sessions.loading || $.movies.loading || $.cinemas.loading);
+const error = computed(() => $.sessions.error || $.movies.error || $.cinemas.error);
+const isBooking = computed(() => $.sessions.loading);
+const isAuthenticated = computed(() => $.auth.isAuthenticated);
 
 const movieTitle = computed(() => {
   if (!sessionDetails.value) return '';
-  const movie = movies.value.find((m) => m.id === sessionDetails.value!.movieId);
-  return movie?.title || '';
+  return $.sessions.getMovieTitle(sessionDetails.value.movieId, $.movies.movies);
 });
 
 const cinemaName = computed(() => {
   if (!sessionDetails.value) return '';
-  const cinema = cinemas.value.find((c) => c.id === sessionDetails.value!.cinemaId);
-  if (!cinema?.name) return '';
-  return cinema.name.charAt(0).toUpperCase() + cinema.name.slice(1).toLowerCase();
+  return formatCinemaName($.sessions.getCinemaName(sessionDetails.value.cinemaId, $.cinemas.cinemas));
 });
 
 const cinemaAddress = computed(() => {
   if (!sessionDetails.value) return '';
-  const cinema = cinemas.value.find((c) => c.id === sessionDetails.value!.cinemaId);
-  return cinema?.address || '';
+  return $.sessions.getCinemaAddress(sessionDetails.value.cinemaId, $.cinemas.cinemas);
 });
+
+const ticketsText = computed(() => formatTicketsText(selectedSeats.value.length));
 
 const handleSeatSelection = (seats: Seat[]) => {
   selectedSeats.value = seats;
 };
-
-const getTicketWord = (count: number): string => {
-  const lastDigit = count % 10;
-  const lastTwoDigits = count % 100;
-  if (lastTwoDigits >= 11 && lastTwoDigits <= 19) return 'билетов';
-  if (lastDigit === 1) return 'билет';
-  if (lastDigit >= 2 && lastDigit <= 4) return 'билета';
-  return 'билетов';
-};
-
-const ticketsText = computed(() => {
-  const count = selectedSeats.value.length;
-  return `${count} ${getTicketWord(count)}`;
-});
 
 const goToLogin = () => {
   router.push({ name: 'login' });
 };
 
 const handleBooking = () => {
-  if (selectedSeats.value.length === 0) {
-    return;
-  }
-
-  isBooking.value = true;
-  error.value = null;
-
-  const sessionId = Number(route.params.sessionId);
-
-  apiClient
-    .post(`/movieSessions/${sessionId}/bookings`, {
-      seats: selectedSeats.value,
-    })
-    .then((response) => {
-      const bookingId = response.data.id;
-      router.push({ name: 'my-bookings', query: { highlight: bookingId } });
-    })
-    .catch((err) => {
-      const errorMessage = err.response?.data?.message || 'Ошибка бронирования';
-      error.value = errorMessage;
-    })
-    .finally(() => {
-      isBooking.value = false;
+  if (selectedSeats.value.length === 0) return;
+  $.sessions.createBooking(sessionId, selectedSeats.value)
+    .then((result) => {
+      router.push({ name: 'my-bookings', query: { highlight: result.id } });
     });
 };
 
-onMounted(() => {
-  const sessionId = Number(route.params.sessionId);
-
-  Promise.all([
-    apiClient.get(`/movieSessions/${sessionId}`),
-    apiClient.get('/movies'),
-    apiClient.get('/cinemas'),
-  ])
-    .then(([sessionResponse, moviesResponse, cinemasResponse]) => {
-      const sessionData = sessionResponse.data;
-      
-      // Проверяем, что сеанс еще не прошел
-      const sessionStartTime = new Date(sessionData.startTime);
-      const now = new Date();
-      
-      if (sessionStartTime <= now) {
-        error.value = 'Нельзя забронировать места на прошедший сеанс';
-        loading.value = false;
-        return;
-      }
-
-      sessionDetails.value = sessionData;
-      movies.value = moviesResponse.data;
-      cinemas.value = cinemasResponse.data;
-    })
-    .catch((err) => {
-      error.value = err.response?.data?.message || 'Ошибка загрузки данных сеанса';
-    })
-    .finally(() => {
-      loading.value = false;
-    });
+onMounted(async () => {
+  await Promise.all([
+    $.movies.fetchMovies(),
+    $.cinemas.fetchCinemas(),
+  ]);
+  await $.sessions.loadSessionForBooking(sessionId);
 });
 </script>
 

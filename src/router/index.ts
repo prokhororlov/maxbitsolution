@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
+import { useRootStore } from '@/stores';
 import Movies from '@/views/Movies.vue';
 import MovieDetail from '@/views/MovieDetail.vue';
 import Cinemas from '@/views/Cinemas.vue';
@@ -46,8 +46,8 @@ const router = createRouter({
       name: 'my-bookings',
       component: MyBookings,
       beforeEnter: (to, from, next) => {
-        const authStore = useAuthStore();
-        const requiresAuth = !authStore.isAuthenticated;
+        const $ = useRootStore();
+        const requiresAuth = !$.auth.isAuthenticated;
         return requiresAuth ? next({ name: 'login' }) : next();
       },
     },

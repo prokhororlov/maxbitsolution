@@ -1,17 +1,17 @@
 <template>
-  <div class="booking-card">
+  <div class="booking-card glass-card">
     <img
       v-if="moviePoster"
-      :src="`http://localhost:3022${moviePoster}`"
+      :src="getImageUrl(moviePoster)"
       :alt="movieTitle"
       class="movie-poster"
     />
     <div class="booking-info">
-      <p><strong>Фильм:</strong> {{ movieTitle }}</p>
-      <p><strong>Кинотеатр:</strong> {{ cinemaName ? cinemaName.charAt(0).toUpperCase() + cinemaName.slice(1).toLowerCase() : '' }}</p>
-      <p><strong>Дата и время:</strong> {{ formatDateTime(sessionStartTime) }}</p>
+      <h3 class="movie-title">{{ movieTitle }}</h3>
+      <p><strong>🎪 Кинотеатр:</strong> {{ formatCinemaName(cinemaName) }}</p>
+      <p v-if="sessionStartTime"><strong>📅 Дата и время:</strong> {{ formatDateTime(sessionStartTime) }}</p>
       <p class="seats-info">
-        <strong>Места:</strong>
+        <strong>🎫 Места:</strong>
         <span
           v-for="(group, index) in formattedSeatsGroups"
           :key="index"
@@ -20,16 +20,19 @@
           {{ group }}
         </span>
       </p>
-    </div>
-    <div v-if="showPayment" class="booking-actions">
-      <button @click="handlePayment" :disabled="isPaying" class="pay-button">
-        Оплатить
-      </button>
-      <PaymentTimer
-        v-if="showTimer"
-        :booked-at="booking.bookedAt"
-        :payment-time-seconds="paymentTimeSeconds"
-      />
+      <div v-if="showPayment" class="booking-actions">
+        <div class="payment-row">
+          <button @click="handlePayment" class="pay-button glass-button">
+            Оплатить
+          </button>
+          <PaymentTimer
+            v-if="showTimer"
+            :booked-at="booking.bookedAt"
+            :payment-time-seconds="paymentTimeSeconds"
+            @expired="handleExpired"
+          />
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -38,19 +41,9 @@
 import { computed } from 'vue';
 import { formatDateTime } from '@/utils/date';
 import PaymentTimer from './PaymentTimer.vue';
-
-interface Seat {
-  rowNumber: number;
-  seatNumber: number;
-}
-
-interface Booking {
-  id: string;
-  movieSessionId: number;
-  bookedAt: string;
-  seats: Seat[];
-  isPaid: boolean;
-}
+import { getImageUrl } from '@/config';
+import { formatCinemaName } from '@/utils/format';
+import type { Booking } from '@/types/api';
 
 interface Props {
   booking: Booking;
@@ -70,9 +63,12 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   pay: [bookingId: string];
+  expired: [bookingId: string];
 }>();
 
-const isPaying = computed(() => false);
+const handleExpired = () => {
+  emit('expired', props.booking.id);
+};
 
 const formattedSeatsGroups = computed(() => {
   const seatsByRow = new Map<number, number[]>();
@@ -101,48 +97,44 @@ const handlePayment = () => {
 <style scoped>
 .booking-card {
   padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
   margin-bottom: 1rem;
   display: flex;
   gap: 1.5rem;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(20px);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease;
+  align-items: flex-start;
 }
 
 .movie-poster {
   width: 80px;
   height: 120px;
   object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-medium);
+  box-shadow: var(--shadow-sm);
   flex-shrink: 0;
-}
-
-.booking-card:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 32px rgba(0, 0, 0, 0.3);
 }
 
 .booking-info {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.movie-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.75rem 0;
+  line-height: 1.3;
 }
 
 .booking-info p {
-  margin-bottom: 0.5rem;
-  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 0.25rem;
+  color: var(--text-muted);
 }
 
 .booking-info strong {
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--text-secondary);
 }
 
 .seats-info {
@@ -153,47 +145,38 @@ const handlePayment = () => {
 }
 
 .seat-group {
-  padding: 4px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
+  padding: 0px 8px 3px;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  background: var(--bg-glass);
   white-space: nowrap;
 }
 
 .booking-actions {
+  margin-top: 0.75rem;
+}
+
+.payment-row {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
   gap: 0.75rem;
 }
 
 .pay-button {
   padding: 0.625rem 1.25rem;
-  background: rgba(76, 175, 80, 0.2);
-  backdrop-filter: blur(10px);
-  color: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(76, 175, 80, 0.4);
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 600;
+  background: var(--button-success-bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--button-success-border);
+  border-radius: var(--radius-lg);
   font-size: 0.9rem;
-  transition: all 0.3s ease;
-  font-family: inherit;
 }
 
 .pay-button:hover:not(:disabled) {
-  background: rgba(76, 175, 80, 0.3);
-  border-color: rgba(76, 175, 80, 0.6);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+  background: var(--button-success-hover-bg);
+  border-color: var(--button-success-hover-border);
+  box-shadow: 0 4px 12px var(--button-success-shadow);
 }
 
-.pay-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Mobile styles */
 @media (max-width: 768px) {
   .booking-card {
     flex-direction: row;
@@ -207,13 +190,20 @@ const handlePayment = () => {
     height: 90px;
   }
 
-  .booking-actions {
-    width: 100%;
-    align-items: stretch;
+  .movie-title {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
   }
 
-  .pay-button {
+  .booking-actions {
+    margin-top: 0.5rem;
+  }
+
+  .payment-row {
     width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
   }
 }
 </style>

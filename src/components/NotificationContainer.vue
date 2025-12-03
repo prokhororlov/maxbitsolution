@@ -5,7 +5,7 @@
         <div
           v-for="notification in notifications"
           :key="notification.id"
-          :class="['notification', `notification-${notification.type}`]"
+          :class="['notification', `notification-${notification.type}`, 'glass-card']"
           @click="removeNotification(notification.id)"
         >
           <div class="notification-icon">
@@ -48,21 +48,14 @@ const { notifications, removeNotification } = useNotifications();
   align-items: center;
   gap: 0.75rem;
   padding: 1rem 1.25rem;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   cursor: pointer;
   pointer-events: auto;
-  transition: all 0.3s ease;
   min-width: 300px;
 }
 
 .notification:hover {
-  background: rgba(255, 255, 255, 0.15);
   transform: translateX(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-xl);
 }
 
 .notification-success {
@@ -115,7 +108,7 @@ const { notifications, removeNotification } = useNotifications();
 
 .notification-message {
   flex: 1;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--text-secondary);
   font-size: 0.95rem;
   line-height: 1.5;
 }
@@ -123,7 +116,7 @@ const { notifications, removeNotification } = useNotifications();
 .notification-close {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-disabled);
   font-size: 1.5rem;
   cursor: pointer;
   padding: 0;
@@ -133,23 +126,22 @@ const { notifications, removeNotification } = useNotifications();
   align-items: center;
   justify-content: center;
   border-radius: 4px;
-  transition: all 0.2s ease;
+  transition: var(--transition-fast);
   flex-shrink: 0;
   line-height: 1;
 }
 
 .notification-close:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--bg-glass-hover);
+  color: var(--text-muted);
 }
 
-/* Transition animations */
 .notification-enter-active {
-  transition: all 0.3s ease;
+  transition: var(--transition-default);
 }
 
 .notification-leave-active {
-  transition: all 0.3s ease;
+  transition: var(--transition-default);
 }
 
 .notification-enter-from {
@@ -166,7 +158,6 @@ const { notifications, removeNotification } = useNotifications();
   transition: transform 0.3s ease;
 }
 
-/* Mobile styles */
 @media (max-width: 768px) {
   .notification-container {
     top: 10px;

@@ -1,50 +1,71 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import { apiClient } from '@/utils/api';
+import { getApiErrorMessage } from '@/utils/errorHandler';
 
-// Функция для получения токена из localStorage
-const getStoredToken = (): string | null => {
-  try {
-    return localStorage.getItem('auth_token');
-  } catch (error) {
-    console.error('Error reading token from localStorage:', error);
-    return null;
-  }
+const STORAGE_KEY = 'auth_token';
+
+const isStorageAvailable = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  if (typeof localStorage === 'undefined') return false;
+  return true;
 };
 
-export const useAuthStore = defineStore('auth', () => {
-  // Инициализируем токен из localStorage при создании store
+const getStoredToken = (): string | null => {
+  if (!isStorageAvailable()) return null;
+  return localStorage.getItem(STORAGE_KEY);
+};
+
+const useAuthStoreImpl = defineStore('auth', () => {
   const token = ref<string | null>(getStoredToken());
   
   const isAuthenticated = computed(() => !!token.value);
 
   const setToken = (newToken: string) => {
-    try {
-      token.value = newToken;
-      localStorage.setItem('auth_token', newToken);
-    } catch (error) {
-      console.error('Error saving token to localStorage:', error);
-    }
+    if (!isStorageAvailable()) return;
+    token.value = newToken;
+    localStorage.setItem(STORAGE_KEY, newToken);
   };
 
   const clearToken = () => {
-    try {
-      token.value = null;
-      localStorage.removeItem('auth_token');
-    } catch (error) {
-      console.error('Error removing token from localStorage:', error);
-    }
+    if (!isStorageAvailable()) return;
+    token.value = null;
+    localStorage.removeItem(STORAGE_KEY);
   };
 
   const logout = () => {
     clearToken();
   };
 
-  // Метод для восстановления токена при загрузке страницы
   const restoreToken = () => {
     const storedToken = getStoredToken();
     if (storedToken) {
       token.value = storedToken;
     }
+  };
+
+  const login = async (username: string, password: string) => {
+    return apiClient
+      .post<{ token: string }>('/login', { username, password })
+      .then((response) => {
+        setToken(response.data.token);
+        return response.data.token;
+      })
+      .catch((err) => {
+        throw new Error(getApiErrorMessage(err) || 'Ошибка входа');
+      });
+  };
+
+  const register = async (username: string, password: string) => {
+    return apiClient
+      .post<{ token: string }>('/register', { username, password })
+      .then((response) => {
+        setToken(response.data.token);
+        return response.data.token;
+      })
+      .catch((err) => {
+        throw new Error(getApiErrorMessage(err) || 'Ошибка регистрации');
+      });
   };
 
   return {
@@ -54,6 +75,10 @@ export const useAuthStore = defineStore('auth', () => {
     clearToken,
     logout,
     restoreToken,
+    login,
+    register,
   };
 });
+
+export const useAuthStore = () => useAuthStoreImpl();
 

@@ -29,8 +29,16 @@ const formatTime = (seconds: number): string => {
   return `${mins}:${String(secs).padStart(2, '0')}`;
 };
 
+const emit = defineEmits<{
+  expired: [];
+}>();
+
 const updateTimer = () => {
+  const prev = remainingSeconds.value;
   remainingSeconds.value = calculateRemaining();
+  if (prev > 0 && remainingSeconds.value === 0) {
+    emit('expired');
+  }
 };
 
 onMounted(() => {
@@ -39,30 +47,23 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  if (intervalId !== null) {
-    clearInterval(intervalId);
-  }
+  if (!intervalId) return;
+  clearInterval(intervalId);
 });
 </script>
 
 <style scoped>
 .payment-timer {
-  color: rgba(255, 152, 0, 0.9);
+  color: rgba(255, 255, 255, 0.5);
   font-size: 0.875rem;
-  font-weight: 600;
-  padding: 0.5rem 0.75rem;
-  background: rgba(255, 152, 0, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 152, 0, 0.3);
-  border-radius: 8px;
-  display: inline-block;
+  font-weight: 400;
+  white-space: nowrap;
 }
 
 /* Mobile styles */
 @media (max-width: 768px) {
   .payment-timer {
     font-size: 0.8rem;
-    padding: 0.4rem 0.6rem;
   }
 }
 </style>

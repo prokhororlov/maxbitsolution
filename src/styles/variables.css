@@ -1,0 +1,62 @@
+:root {
+  /* Цвета фона */
+  --bg-glass: rgba(255, 255, 255, 0.05);
+  --bg-glass-light: rgba(255, 255, 255, 0.03);
+  --bg-glass-hover: rgba(255, 255, 255, 0.08);
+  --bg-glass-active: rgba(255, 255, 255, 0.15);
+  --bg-glass-overlay: rgba(0, 0, 0, 0.6);
+  
+  /* Цвета границ */
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-light: rgba(255, 255, 255, 0.15);
+  --border-medium: rgba(255, 255, 255, 0.2);
+  --border-strong: rgba(255, 255, 255, 0.3);
+  --border-stronger: rgba(255, 255, 255, 0.4);
+  
+  /* Цвета текста */
+  --text-primary: rgba(255, 255, 255, 0.98);
+  --text-secondary: rgba(255, 255, 255, 0.95);
+  --text-muted: rgba(255, 255, 255, 0.9);
+  --text-light: rgba(255, 255, 255, 0.8);
+  --text-lighter: rgba(255, 255, 255, 0.7);
+  --text-disabled: rgba(255, 255, 255, 0.5);
+  
+  /* Радиусы */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  
+  /* Эффекты размытия */
+  --blur-sm: blur(10px);
+  --blur-md: blur(20px);
+  --blur-lg: blur(4px);
+  
+  /* Переходы */
+  --transition-default: all 0.3s ease;
+  --transition-fast: all 0.2s ease;
+  
+  /* Тени */
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.4);
+  
+  /* Цвета кнопок */
+  --button-success-bg: rgba(76, 175, 80, 0.2);
+  --button-success-border: rgba(76, 175, 80, 0.4);
+  --button-success-hover-bg: rgba(76, 175, 80, 0.3);
+  --button-success-hover-border: rgba(76, 175, 80, 0.6);
+  --button-success-shadow: rgba(76, 175, 80, 0.3);
+  
+  --button-danger-bg: rgba(239, 83, 80, 0.2);
+  --button-danger-border: rgba(239, 83, 80, 0.4);
+  --button-danger-hover-bg: rgba(239, 83, 80, 0.3);
+  --button-danger-hover-border: rgba(239, 83, 80, 0.6);
+  --button-danger-shadow: rgba(239, 83, 80, 0.3);
+  
+  /* Медиа-запросы */
+  --mobile-breakpoint: 768px;
+}
+

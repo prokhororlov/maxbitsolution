@@ -17,11 +17,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-
-interface Seat {
-  rowNumber: number;
-  seatNumber: number;
-}
+import type { Seat } from '@/types/api';
 
 interface Props {
   rows: number;
