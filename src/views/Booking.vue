@@ -95,6 +95,9 @@ const handleBooking = () => {
   if (selectedSeats.value.length === 0) return;
   $.sessions.createBooking(sessionId, selectedSeats.value)
     .then((result) => {
+      return $.bookings.loadAllData().then(() => result);
+    })
+    .then((result) => {
       router.push({ name: 'my-bookings', query: { highlight: result.id } });
     });
 };

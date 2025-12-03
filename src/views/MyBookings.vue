@@ -58,13 +58,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import BookingCard from '@/components/BookingCard.vue';
 import { useNotifications } from '@/composables/useNotifications';
 import { useRootStore } from '@/stores';
 
 const { success } = useNotifications();
+const route = useRoute();
 const router = useRouter();
 const $ = useRootStore();
 const isMounted = ref(false);
@@ -131,6 +132,12 @@ onMounted(async () => {
     }
     if ($.bookings.hasExpiredUnpaid) $.bookings.loadAllData();
   }, 1000);
+});
+
+watch(() => route.query.highlight, async (highlight) => {
+  if (highlight && isMounted.value) {
+    await $.bookings.loadAllData();
+  }
 });
 
 onBeforeUnmount(() => {

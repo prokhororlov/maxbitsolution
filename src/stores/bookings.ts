@@ -134,7 +134,7 @@ const useBookingsStoreImpl = defineStore('bookings', () => {
 
   const loadAllData = async () => {
     await Promise.all([
-      fetchBookings(),
+      fetchBookings(true),
       fetchSettings(),
     ]);
     const sessionIds = [...new Set(bookings.value.map((b) => b.movieSessionId))];
