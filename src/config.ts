@@ -1,4 +1,9 @@
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3022';
+const isProduction = import.meta.env.PROD;
+const defaultApiUrl = isProduction 
+  ? '/projects/maxbitsolution/api' 
+  : 'http://localhost:3022';
+
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || defaultApiUrl;
 
 export const getImageUrl = (path: string): string => {
   if (!path) return '';
