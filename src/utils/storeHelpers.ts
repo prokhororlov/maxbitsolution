@@ -1,16 +1,16 @@
 import { getApiErrorMessage } from './errorHandler';
 import type { Ref } from 'vue';
 
-export const handleStoreError = (
+export const handleStoreError = <T>(
   err: unknown,
   errorRef: Ref<string | null>,
-  fallbackData?: unknown
-): unknown => {
+  fallbackData?: T
+): T => {
   if (err && typeof err === 'object' && ('name' in err || 'code' in err)) {
     const errorName = 'name' in err ? err.name : '';
     const errorCode = 'code' in err ? err.code : '';
     if (errorName === 'CanceledError' || errorCode === 'ERR_CANCELED') {
-      return fallbackData;
+      return fallbackData as T;
     }
   }
   errorRef.value = getApiErrorMessage(err);
@@ -22,6 +22,6 @@ export const createApiRequest = <T>(
   errorRef: Ref<string | null>,
   fallbackData?: T
 ): Promise<T> => {
-  return requestFn().catch((err) => handleStoreError(err, errorRef, fallbackData));
+  return requestFn().catch((err) => handleStoreError<T>(err, errorRef, fallbackData));
 };
 
