@@ -107,8 +107,11 @@ frontend/
 │   │   ├── AppLayout.vue
 │   │   ├── Navigation.vue
 │   │   ├── SeatGrid.vue
+│   │   ├── SeatCanvas.vue
 │   │   ├── BookingCard.vue
-│   │   └── PaymentTimer.vue
+│   │   ├── PaymentTimer.vue
+│   │   ├── ConfirmModal.vue
+│   │   └── NotificationContainer.vue
 │   ├── views/            # Страницы приложения
 │   │   ├── Movies.vue
 │   │   ├── MovieDetail.vue
@@ -119,13 +122,35 @@ frontend/
 │   │   ├── Login.vue
 │   │   └── Register.vue
 │   ├── stores/           # Pinia stores
-│   │   └── auth.ts
+│   │   ├── auth.ts
+│   │   ├── movies.ts
+│   │   ├── cinemas.ts
+│   │   ├── sessions.ts
+│   │   ├── bookings.ts
+│   │   └── index.ts
+│   ├── composables/      # Композиционные функции
+│   │   ├── useDataLoader.ts
+│   │   └── useNotifications.ts
 │   ├── router/           # Vue Router конфигурация
 │   │   └── index.ts
 │   ├── utils/            # Утилиты
 │   │   ├── api.ts
 │   │   ├── validation.ts
-│   │   └── date.ts
+│   │   ├── date.ts
+│   │   ├── bookings.ts
+│   │   ├── data.ts
+│   │   ├── errorHandler.ts
+│   │   ├── format.ts
+│   │   ├── requestController.ts
+│   │   ├── sessions.ts
+│   │   ├── storeHelpers.ts
+│   │   └── text.ts
+│   ├── types/            # TypeScript типы
+│   │   └── api.ts
+│   ├── styles/           # Стили
+│   │   ├── variables.css
+│   │   └── utilities.css
+│   ├── config.ts
 │   ├── App.vue
 │   └── main.ts
 ├── vite.config.ts
@@ -218,10 +243,9 @@ frontend/
 ## Тестирование
 
 Тесты написаны для:
-- Утилиты валидации форм
-- Компонент SeatGrid (выбор мест)
-- Компонент PaymentTimer (таймер оплаты)
-- Store авторизации
+- Утилиты валидации форм (`validation.test.ts`)
+- Компонент PaymentTimer (таймер оплаты) (`PaymentTimer.test.ts`)
+- Store авторизации (`auth.test.ts`)
 
 ## Требования
 

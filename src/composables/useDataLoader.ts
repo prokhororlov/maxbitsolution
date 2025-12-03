@@ -18,20 +18,22 @@ export const useDataLoader = <T>(options: DataLoaderOptions<T>) => {
     }
     loading.value = true;
     error.value = null;
-    try {
-      const result = await loadFn();
-      data.value = result;
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Ошибка загрузки данных';
-      error.value = errorMessage;
-      if (onError) {
-        onError(err);
-      }
-      throw err;
-    } finally {
-      loading.value = false;
-    }
+    return loadFn()
+      .then((result) => {
+        data.value = result;
+        return result;
+      })
+      .catch((err) => {
+        const errorMessage = err instanceof Error ? err.message : 'Ошибка загрузки данных';
+        error.value = errorMessage;
+        if (onError) {
+          onError(err);
+        }
+        throw err;
+      })
+      .finally(() => {
+        loading.value = false;
+      });
   };
 
   const reset = () => {
