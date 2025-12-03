@@ -33,8 +33,9 @@ apiClient.interceptors.response.use(
     const isWindowAvailable = typeof window !== 'undefined';
     if (!isWindowAvailable) return Promise.reject(error);
     const pathname = window.location.pathname;
-    const isAuthPage = pathname === '/login' || pathname === '/register';
-    if (!isAuthPage) window.location.href = '/login';
+    const basePath = '/projects/maxbitsolution';
+    const isAuthPage = pathname.includes('/login') || pathname.includes('/register');
+    if (!isAuthPage) window.location.href = `${basePath}/login`;
     return Promise.reject(error);
   }
 );
